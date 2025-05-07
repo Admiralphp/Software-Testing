@@ -30,7 +30,7 @@ public class BookController {
 
     @PostMapping
     public ResponseEntity<Book> createBook(@RequestBody Book book) {
-        Book savedBook = bookService.addBook(book);
+        Book savedBook = bookService.saveBook(book);
         return ResponseEntity.ok(savedBook);
     }
 }
