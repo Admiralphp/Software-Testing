@@ -29,4 +29,22 @@ app.post("/api/users", (req, res) => {
   res.status(201).json(newUser);
 });
 
+app.put("/api/users/:id", (req, res) => {
+  const { name, email } = req.body;
+  const id = parseInt(req.params.id);
+  
+  if (!name || !email) {
+    return res.status(400).json({ message: "Name and email are required" });
+  }
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  db.prepare('UPDATE users SET name = ?, email = ? WHERE id = ?').run(name, email, id);
+  const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  res.json(updatedUser);
+});
+
 module.exports = app;
