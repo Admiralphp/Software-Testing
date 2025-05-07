@@ -21,4 +21,10 @@ public class BookService {
             .findFirst()
             .orElse(null);
     }
+
+    public Book addBook(Book book) {
+        // In a real application, this would save to a database
+        // For now, we'll just return the book with the ID set
+        return book;
+    }
 }

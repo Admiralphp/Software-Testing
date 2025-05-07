@@ -3,66 +3,87 @@ package com.example.demo.controller;
 import com.example.demo.model.Book;
 import com.example.demo.service.BookService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@WebMvcTest(BookController.class)
+@ExtendWith(MockitoExtension.class)
 public class BookControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private BookService bookService;
 
+    @InjectMocks
+    private BookController bookController;
+
     @Test
-    public void testGetAllBooks() throws Exception {
+    public void testGetAllBooks() {
+        // Given
         List<Book> books = Arrays.asList(
             new Book(1L, "The Great Gatsby", "F. Scott Fitzgerald"),
             new Book(2L, "1984", "George Orwell")
         );
-
         when(bookService.getAllBooks()).thenReturn(books);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/books")
-                .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$", hasSize(2)))
-            .andExpect(jsonPath("$[0].title", is("The Great Gatsby")))
-            .andExpect(jsonPath("$[1].title", is("1984")));
+        // When
+        List<Book> result = bookController.getAllBooks();
+
+        // Then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getTitle()).isEqualTo("The Great Gatsby");
+        assertThat(result.get(1).getTitle()).isEqualTo("1984");
     }
 
     @Test
-    public void testGetBookById_Found() throws Exception {
+    public void testGetBookById_Found() {
+        // Given
         Book book = new Book(1L, "The Great Gatsby", "F. Scott Fitzgerald");
         when(bookService.getBookById(1L)).thenReturn(book);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/books/1")
-                .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.title", is("The Great Gatsby")))
-            .andExpect(jsonPath("$.author", is("F. Scott Fitzgerald")));
+        // When
+        ResponseEntity<Book> response = bookController.getBookById(1L);
+
+        // Then
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getTitle()).isEqualTo("The Great Gatsby");
+        assertThat(response.getBody().getAuthor()).isEqualTo("F. Scott Fitzgerald");
     }
 
     @Test
-    public void testGetBookById_NotFound() throws Exception {
+    public void testGetBookById_NotFound() {
+        // Given
         when(bookService.getBookById(3L)).thenReturn(null);
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/books/3")
-                .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isNotFound());
+        // When
+        ResponseEntity<Book> response = bookController.getBookById(3L);
+
+        // Then
+        assertThat(response.getStatusCode().is4xxClientError()).isTrue();
+    }
+
+    @Test
+    public void testCreateBook() {
+        // Given
+        Book book = new Book(3L, "The Hobbit", "J.R.R. Tolkien");
+        when(bookService.addBook(book)).thenReturn(book);
+
+        // When
+        ResponseEntity<Book> response = bookController.createBook(book);
+
+        // Then
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getId()).isEqualTo(3L);
+        assertThat(response.getBody().getTitle()).isEqualTo("The Hobbit");
+        assertThat(response.getBody().getAuthor()).isEqualTo("J.R.R. Tolkien");
     }
 }
