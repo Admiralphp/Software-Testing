@@ -29,4 +29,15 @@ public class BookService {
     public Book addBook(Book book) {
         return saveBook(book);
     }
+
+    public Book updateBook(Long id, Book bookDetails) {
+        Optional<Book> optionalBook = bookRepository.findById(id);
+        if (optionalBook.isPresent()) {
+            Book book = optionalBook.get();
+            book.setTitle(bookDetails.getTitle());
+            book.setAuthor(bookDetails.getAuthor());
+            return bookRepository.save(book);
+        }
+        return null;
+    }
 }

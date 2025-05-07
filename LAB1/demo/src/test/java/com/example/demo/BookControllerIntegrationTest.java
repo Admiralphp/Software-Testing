@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -65,5 +66,34 @@ public class BookControllerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.title", is("To Kill a Mockingbird")))
             .andExpect(jsonPath("$.author", is("Harper Lee")));
+    }
+
+    @Test
+    public void testUpdateBook() throws Exception {
+        // First, save a book to update
+        Book existingBook = bookRepository.findAll().get(0);
+        Book updatedBook = new Book(null, "Updated Title", "Updated Author");
+
+        mockMvc.perform(put("/api/books/" + existingBook.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updatedBook)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title", is("Updated Title")))
+            .andExpect(jsonPath("$.author", is("Updated Author")));
+
+        // Verify the book was updated in the database
+        Book bookInDb = bookRepository.findById(existingBook.getId()).orElse(null);
+        assertEquals("Updated Title", bookInDb.getTitle());
+        assertEquals("Updated Author", bookInDb.getAuthor());
+    }
+
+    @Test
+    public void testUpdateBook_NotFound() throws Exception {
+        Book updatedBook = new Book(null, "Updated Title", "Updated Author");
+
+        mockMvc.perform(put("/api/books/999")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updatedBook)))
+            .andExpect(status().isNotFound());
     }
 }
