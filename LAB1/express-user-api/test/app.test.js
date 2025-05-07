@@ -34,4 +34,36 @@ describe("User API", () => {
         .expect(404);
     });
   });
+
+  describe("POST /api/users", () => {
+    it("should create a new user", async () => {
+      const newUser = {
+        name: "Charlie",
+        email: "charlie@example.com"
+      };
+
+      const res = await request(app)
+        .post("/api/users")
+        .send(newUser)
+        .expect("Content-Type", /json/)
+        .expect(201);
+
+      expect(res.body).to.have.property("id");
+      expect(res.body).to.have.property("name", newUser.name);
+      expect(res.body).to.have.property("email", newUser.email);
+    });
+
+    it("should return 400 if name or email is missing", async () => {
+      const invalidUser = {
+        name: "Charlie"
+        // missing email
+      };
+
+      await request(app)
+        .post("/api/users")
+        .send(invalidUser)
+        .expect("Content-Type", /json/)
+        .expect(400);
+    });
+  });
 });
